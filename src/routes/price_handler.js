@@ -1,12 +1,14 @@
 const request = require('request');
 
-const BITTREX_API = 'https://bittrex.com/api/v1.1/public/getticker?market='
-const BINANCE_API = 'https://api.binance.com/api/v1/ticker/price?symbol='
-const CRYPTOPIA_API = 'https://www.cryptopia.co.nz/api/GetMarket/'
+const BITTREX_API = 'https://bittrex.com/api/v1.1/public/getticker?market=';
+const BINANCE_API = 'https://api.binance.com/api/v1/ticker/price?symbol=';
+const CRYPTOPIA_API = 'https://www.cryptopia.co.nz/api/GetMarket/';
+const HITBTC_API = 'https://api.hitbtc.com/api/2/public/ticker/';
 
 const BITTREX = 'bittrex';
 const BINANCE = 'binance';
 const CRYPTOPIA = 'cryptopia';
+const HITBTC = 'hitbtc';
 
 function handleBinance(pair, res) {
   const pairSplit = pair.split('-');
@@ -67,6 +69,27 @@ function handleCryptopia(pair, res) {
   });
 }
 
+function handleHitbtc(pair, res) {
+  const pairSplit = pair.split('-');
+  const url = HITBTC_API + pairSplit[1] + pairSplit[0];
+  request(url, function(err, body){
+    if (err || body.statusCode !== 200) {
+      res.status(500).json({ error: 'Something went wrong' })
+    } else {
+      try {
+        const response = JSON.parse(body.body);
+        res.json({
+          pair,
+          lastPrice: response.last,
+        });
+      } catch (error) {
+        res.status(500).json({ error: 'Something went wrong' })
+      }
+    }
+  });
+
+}
+
 
 module.exports = function(req, res) {
   const { pair, exchange } = req.params;
@@ -79,6 +102,9 @@ module.exports = function(req, res) {
       break;
     case CRYPTOPIA:
       handleCryptopia(pair, res);
+      break;
+    case HITBTC:
+      handleHitbtc(pair, res);
       break;
   }
 }
